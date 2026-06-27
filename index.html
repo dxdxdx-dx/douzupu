@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">家族族谱</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="passwordGate" class="password-gate" hidden>
+        <form id="passwordForm" class="password-box">
+            <h2>访问验证</h2>
+            <p>请输入访问密码查看族谱</p>
+            <input type="password" id="passwordInput" autocomplete="current-password" placeholder="访问密码">
+            <button type="submit" class="btn btn-primary">进入网站</button>
+            <div id="passwordError" class="password-error" hidden>密码不正确，请重试。</div>
+        </form>
+    </div>
+
+    <header>
+        <div class="header-content">
+            <h1 id="siteTitle">家族族谱</h1>
+            <p id="siteSubtitle" class="subtitle">传承家族记忆，铭记血脉相连</p>
+        </div>
+    </header>
+
+    <!-- 标签页导航 -->
+    <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="intro">📜 家族简介</button>
+        <button class="tab-btn" data-tab="tree">🌳 族谱视图</button>
+    </nav>
+
+    <div id="editorPanel" class="editor-panel editor-only" hidden>
+        <span class="editor-badge">本地编辑模式</span>
+        <button id="toggleSiteSettingsBtn" class="btn btn-secondary btn-sm">站点设置</button>
+        <button id="exportDataBtn" class="btn btn-primary btn-sm">导出 data.js</button>
+        <button id="resetDraftBtn" class="btn btn-secondary btn-sm">放弃本地草稿</button>
+    </div>
+
+    <main>
+        <section id="siteSettingsPanel" class="site-settings-panel editor-only" hidden>
+            <div class="site-settings-grid">
+                <div class="form-group">
+                    <label for="familyNameInput">家族名称</label>
+                    <input type="text" id="familyNameInput" placeholder="例如：张氏、王氏、李氏">
+                </div>
+                <div class="form-group">
+                    <label for="siteTitleInput">网站标题</label>
+                    <input type="text" id="siteTitleInput" placeholder="例如：张氏族谱">
+                </div>
+                <div class="form-group">
+                    <label for="siteSubtitleInput">副标题</label>
+                    <input type="text" id="siteSubtitleInput" placeholder="例如：传承家族记忆，铭记血脉相连">
+                </div>
+                <div class="form-group">
+                    <label for="footerTextInput">页脚文字</label>
+                    <input type="text" id="footerTextInput" placeholder="例如：张氏族谱 - 传承家族历史">
+                </div>
+                <div class="form-group">
+                    <label for="accessPasswordInput">访问密码</label>
+                    <input type="text" id="accessPasswordInput" placeholder="留空则不需要密码">
+                </div>
+            </div>
+            <div class="site-settings-actions">
+                <button id="saveSiteSettingsBtn" class="btn btn-primary btn-sm">保存设置</button>
+                <button id="cancelSiteSettingsBtn" class="btn btn-secondary btn-sm">收起</button>
+            </div>
+        </section>
+
+        <!-- 家族简介页面 -->
+        <div id="introPage" class="tab-page active">
+            <div class="family-intro-section">
+                <div class="intro-header">
+                    <h2>📜 家族简介</h2>
+                    <button id="editIntroBtn" class="btn btn-secondary btn-sm editor-only">编辑</button>
+                </div>
+                <div id="familyIntro" class="family-intro-content" contenteditable="false">
+                    点击"编辑"按钮添加家族简介...
+                </div>
+                <div id="introActions" class="intro-actions" style="display: none;">
+                    <button id="saveIntroBtn" class="btn btn-primary btn-sm">保存</button>
+                    <button id="cancelIntroBtn" class="btn btn-secondary btn-sm">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 族谱视图页面 -->
+        <div id="treePage" class="tab-page">
+            <div class="controls">
+                <button id="addRootBtn" class="btn btn-primary editor-only">
+                    <span class="btn-icon">+</span>
+                    添加始祖
+                </button>
+                <button id="loadSampleBtn" class="btn btn-accent editor-only">
+                    <span class="btn-icon">📋</span>
+                    加载示例
+                </button>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="搜索成员姓名...">
+                    <button id="searchBtn" class="btn btn-secondary">搜索</button>
+                    <button id="clearSearchBtn" class="btn btn-secondary" style="display: none;">清除</button>
+                </div>
+                <button id="zoomInBtn" class="btn btn-secondary">放大</button>
+                <button id="zoomOutBtn" class="btn btn-secondary">缩小</button>
+                <button id="resetViewBtn" class="btn btn-secondary">重置视图</button>
+                <button id="homeViewBtn" class="btn btn-secondary">回到起点</button>
+                <button id="toggleSpouseBtn" class="btn btn-secondary" aria-pressed="true">隐藏配偶</button>
+            </div>
+
+            <div class="branch-controls">
+                <label for="generationFilter">世代</label>
+                <select id="generationFilter">
+                    <option value="">全部世代</option>
+                </select>
+                <label for="branchFilter">分支</label>
+                <select id="branchFilter">
+                    <option value="">完整族谱</option>
+                </select>
+                <button id="focusBranchBtn" class="btn btn-secondary">查看分支</button>
+                <button id="backBranchBtn" class="btn btn-secondary" disabled>返回上一支</button>
+                <button id="showAllBtn" class="btn btn-secondary">显示全部</button>
+            </div>
+
+            <!-- 搜索结果提示 -->
+            <div id="searchResult" class="search-result" style="display: none;"></div>
+            <div id="branchStatus" class="branch-status" style="display: none;"></div>
+
+            <div class="tree-container" id="treeContainer">
+                <div class="tree" id="familyTree">
+                    <!-- 族谱树将在这里渲染 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加/编辑人物模态框 -->
+        <div class="modal editor-only" id="personModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">添加新成员</h2>
+                    <button class="modal-close" id="closeModal">&times;</button>
+                </div>
+                <form id="personForm">
+                    <input type="hidden" id="personId">
+                    <input type="hidden" id="parentId">
+                    
+                    <div class="form-group">
+                        <label for="photo">照片</label>
+                        <div class="photo-upload">
+                            <div class="photo-preview" id="photoPreview">
+                                <span class="photo-placeholder">📷</span>
+                            </div>
+                            <input type="file" id="photo" accept="image/*" class="photo-input">
+                            <label for="photo" class="photo-label">选择照片</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="name">姓名 *</label>
+                        <input type="text" id="name" required placeholder="请输入姓名">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="gender">性别</label>
+                            <select id="gender">
+                                <option value="male">男</option>
+                                <option value="female">女</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="birthYear">出生年份</label>
+                            <input type="number" id="birthYear" placeholder="如: 1990">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="deathYear">逝世年份</label>
+                            <input type="number" id="deathYear" placeholder="如适用">
+                        </div>
+                        <div class="form-group">
+                            <label for="generation">世代</label>
+                            <input type="number" id="generation" placeholder="自动计算" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="spouse">配偶</label>
+                        <input type="text" id="spouse" placeholder="请输入配偶姓名">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notes">备注</label>
+                        <textarea id="notes" rows="3" placeholder="其他信息..."></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 人物详情模态框 -->
+        <div class="modal" id="detailModal">
+            <div class="modal-content modal-detail">
+                <div class="modal-header">
+                    <h2 id="detailTitle">人物详情</h2>
+                    <button class="modal-close" id="closeDetailModal">&times;</button>
+                </div>
+                <div id="detailContent" class="detail-content">
+                    <!-- 详情内容将在这里渲染 -->
+                </div>
+                <div class="detail-actions editor-only">
+                    <button class="btn btn-secondary" id="editPersonBtn">编辑</button>
+                    <button class="btn btn-secondary" id="addChildBtn">添加子女</button>
+                    <button class="btn btn-danger" id="deletePersonBtn">删除</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p id="siteFooter">家族族谱 - 传承家族历史</p>
+    </footer>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
